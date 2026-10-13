@@ -1,0 +1,19 @@
+{
+  "configVersion": "drawing-config-3",
+  "demoId": "drawing",
+  "conditionId": "clutch",
+  "participantId": "",
+  "strokeWidthMeters": 0.008,
+  "minPointDistanceMeters": 0.001,
+  "strokeAlpha": 0.8,
+  "sketchAlpha": 0.9,
+  "eraseRadiusMeters": 0.05,
+  "backgroundRed": 0.788,
+  "backgroundGreen": 0.651,
+  "backgroundBlue": 1.0,
+  "autoSaveIntervalSeconds": 2.0,
+  "telemetryRateHz": 30.0,
+  "preferredRefreshRateHz": 90.0,
+  "finishButtonHoldSeconds": 2.0,
+  "stopXrWhenSessionEnds": true
+}
