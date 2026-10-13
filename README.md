@@ -64,7 +64,7 @@ Current defaults:
 - Light bright purple background (`#C9A6FF`).
 - Fixed red drawing strokes, 80% opacity and 8 mm width.
 - Blue Sketch (Part 0) appearance at 90% opacity; the default drawing session starts in Part 1.
-- 1 mm minimum distance between added drawing points.
+- 1 mm minimum distance between added drawing points. Occasional frame drops on Quest can increase the gaps between sampled points, making curves appear less smooth or more segmented.
 - 5 cm eraser radius.
 - Drawing snapshots every 2 seconds.
 - A preferred XR refresh rate of 90 Hz, when supported by the runtime.
