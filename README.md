@@ -53,7 +53,7 @@ No machine-specific path changes are required. Unity recreates its local caches 
 
 Erase takes priority if the left index and middle pinches overlap. The right fingertip supplies the drawing and erasing position; it does not need to pinch.
 
-Drawing and erasing use hand tracking. Session data is saved automatically. In the Editor, stop Play Mode when you have finished; this does not guarantee a screenshot.
+Drawing and erasing use hand tracking. When you click **Stop** in the Unity Editor, drawing and session data are automatically saved to `Assets/Data/<timestamp>/`. Stopping Play Mode does not generate a screenshot.
 
 ## Configuration
 
@@ -66,8 +66,6 @@ Current defaults:
 - Blue Sketch (Part 0) appearance at 90% opacity; the default drawing session starts in Part 1.
 - 1 mm minimum distance between added drawing points. Occasional frame drops on Quest can increase the gaps between sampled points, making curves appear less smooth or more segmented.
 - 5 cm eraser radius.
-- Drawing snapshots every 2 seconds.
-- A preferred XR refresh rate of 90 Hz, when supported by the runtime.
 
 Set `participantId`, `demoId`, and `conditionId` in the configuration for an experiment. The participant ID is blank by default. Desktop players also accept:
 
@@ -116,7 +114,7 @@ adb pull /sdcard/Android/data/edu.handmade.drawing/files/DrawingSessions ./Drawi
 
 ### Autosave and recovery
 
-Event serialization, drawing export, and disk writes run on a single background task. Event batches are normally flushed about every 0.25 seconds, and drawing snapshots are requested every 2 seconds. The drawing thread copies geometry for each snapshot without waiting for the normal background write to finish.
+Drawing geometry and session data are saved automatically in the background. These saves update the data files; they do not create periodic screenshots.
 
 Pause and normal shutdown wait for pending saves. Previously flushed data can remain available after an unexpected exit, but a crash, power loss, or storage failure can still lose pending data. There is no guaranteed maximum loss interval or automatic session-resume interface.
 
@@ -124,9 +122,9 @@ Pause and normal shutdown wait for pending saves. Previously flushed data can re
 
 Drawing checks the fingertip **every rendered frame**, after the hand SDK updates. A new visible point is added when movement exceeds the configured minimum distance. There is no fixed time-based drawing throttle or synthetic curve interpolation. Invalid tracking ends the current segment instead of connecting across a tracking gap.
 
-The app requests a higher refresh rate up to the configured preference when the XR runtime advertises support, without lowering an already higher rate. A 90 Hz request is not a guarantee. `telemetryRateHz` controls ordinary diagnostic logging, not drawing-point sampling.
+`telemetryRateHz` controls ordinary diagnostic logging, not drawing-point sampling.
 
-To investigate stalls, inspect `stroke_point.sampleIntervalSeconds`, `slow_frame.frameDeltaSeconds`, and `autosave_complete` in `events.jsonl`. The fields `snapshotCopyMs`, `saveWorkerMs`, and `saveInProgress` describe snapshot preparation and background-save activity. A reported display refresh rate of zero means it was unavailable. Audio latency is a buffer-based estimate, not a measured end-to-end acoustic latency.
+To investigate stalls, inspect `stroke_point.sampleIntervalSeconds`, `slow_frame.frameDeltaSeconds`, and `autosave_complete` in `events.jsonl`. The fields `snapshotCopyMs`, `saveWorkerMs`, and `saveInProgress` describe save preparation and background-save activity. Audio latency is a buffer-based estimate, not a measured end-to-end acoustic latency.
 
 ## Troubleshooting
 
