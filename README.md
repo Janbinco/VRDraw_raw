@@ -1,143 +1,41 @@
 # Drawing
 
-A Unity application for drawing in VR with Meta Quest hand tracking. Hold a left-hand pinch to draw with your right index fingertip, or use a left middle-finger pinch to erase. The drawing space has no tool panels, and session data is saved automatically.
+Hand-tracked VR drawing with Meta Quest. No tool panels.
 
-This repository contains the Unity source project, not a standalone executable or a browser/WebXR application.
+## Run
 
-## Requirements
-
-- **Unity 6000.3.5f1**, installed through Unity Hub.
-- A **Meta Quest headset** with hand tracking enabled.
-- For Editor testing: a PC configured for **Meta Quest Link**, with hand tracking available to the Unity XR session.
-- An internet connection for the first import and package downloads.
-- For building a standalone Quest app: Unity **Android Build Support**, including the Android SDK, NDK, and OpenJDK.
-
-Meta XR, OpenXR, and Input System dependencies are declared in `Packages/manifest.json` and `Packages/packages-lock.json`. Unity restores them during import. Do not copy another project's `Library` folder or install a second copy of the Meta SDK under `Assets`.
-
-## Quick start
-
-### 1. Download the project
-
-For the first download, use `git clone`:
+Requires **Unity 6000.3.5f1** and a **Meta Quest connected through Quest Link**, with hand tracking enabled.
 
 ```bash
 git clone https://github.com/Janbinco/VRDraw_raw.git
-cd VRDraw_raw
 ```
 
-Alternatively, download and extract the repository ZIP from GitHub.
+1. Add the downloaded `VRDraw_raw` folder to Unity Hub and open it.
+2. Wait for Unity to download dependencies and finish importing.
+3. Open `Assets/Scenes/DrawingScene.unity`.
+4. Connect the headset and click **Play**.
 
-### 2. Open it in Unity
+## Draw
 
-1. In Unity Hub, add the **VRDraw_raw folder** containing `Assets`, `Packages`, and `ProjectSettings`.
-2. Open it with **Unity 6000.3.5f1**.
-3. Wait for package downloads, asset import, and script compilation to finish. The first import can take several minutes.
-4. Open `Assets/Scenes/DrawingScene.unity` if it is not already open. It is the project's only enabled build scene.
+- **Draw:** hold your left thumb and index fingertip together, then move your right index fingertip.
+- **Pause:** release the left index pinch.
+- **Erase:** hold your left thumb and middle fingertip together, then move your right index fingertip over the drawing.
 
-No machine-specific path changes are required. Unity recreates its local caches automatically.
+Quest frame drops can make curves appear less smooth.
 
-### 3. Start drawing
+## Save
 
-1. Connect the headset through Quest Link and make sure hand tracking is available.
-2. Click **Play** in Unity.
-3. Put on the headset and keep both hands visible to its tracking cameras.
-4. Hold the left index-finger pinch and move your right index fingertip to draw.
+Drawing and session data are saved automatically while drawing. Clicking **Stop** in Unity saves any remaining data.
 
-## Hand gestures
-
-| Action | Input |
-| --- | --- |
-| Draw | Hold the **left thumb and index fingertip together**, then move the **right index fingertip**. |
-| Stop drawing | Release the left index pinch. |
-| Erase | Hold the **left thumb and middle fingertip together**, then move the right index fingertip over existing strokes. |
-
-Erase takes priority if the left index and middle pinches overlap. The right fingertip supplies the drawing and erasing position; it does not need to pinch.
-
-Drawing and erasing use hand tracking. When you click **Stop** in the Unity Editor, drawing and session data are automatically saved to `Assets/Data/<timestamp>/`. Stopping Play Mode does not generate a screenshot.
-
-## Configuration
-
-Edit `Assets/Resources/DrawingConfig.json` **before starting a session**. No in-VR configuration panel is shown.
-
-Current defaults:
-
-- Light bright purple background (`#C9A6FF`).
-- Fixed red drawing strokes, 80% opacity and 8 mm width.
-- Blue Sketch (Part 0) appearance at 90% opacity; the default drawing session starts in Part 1.
-- 1 mm minimum distance between added drawing points. Occasional frame drops on Quest can increase the gaps between sampled points, making curves appear less smooth or more segmented.
-- 5 cm eraser radius.
-
-Set `participantId`, `demoId`, and `conditionId` in the configuration for an experiment. The participant ID is blank by default. Desktop players also accept:
+Each session is stored in a timestamp-named folder:
 
 ```text
---participant P001 --condition clutch --demo drawing
+Assets/Data/<timestamp>/
 ```
 
-Do not commit real participant identifiers or recordings to a public repository.
+- `drawing.csv` / `drawing.json`: drawing points.
+- `drawing.obj`: 3D drawing lines.
+- `events.jsonl`: movement and gesture records.
+- `metadata.json` / `session.json`: session information.
 
-## Saved data
-
-### Location
-
-In the **Unity Editor**, recordings are saved inside the project:
-
-```text
-Assets/Data/<local timestamp>/
-```
-
-Example folder name: `2026-10-13_14-30-00-123`. Each session gets a separate folder named using local time with milliseconds and no random suffix. Event timestamps inside the files use UTC.
-
-In an **installed player**, including a Quest build, recordings are saved under:
-
-```text
-Application.persistentDataPath/DrawingSessions/<local timestamp>/
-```
-
-The Unity Console prints the resolved location as `[Drawing] Session data: ...`. Paths are determined at runtime and do not depend on the original developer's computer.
-
-For a Quest build with the configured package ID, retrieve sessions using Android debugging tools:
-
-```bash
-adb pull /sdcard/Android/data/edu.handmade.drawing/files/DrawingSessions ./DrawingSessions
-```
-
-### Files
-
-| File | Contents |
-| --- | --- |
-| `drawing.json` / `drawing.csv` | Current or final drawing geometry, grouped by stroke and part. |
-| `drawing.obj` | 3D polyline export; this is not a solid mesh. |
-| `events.jsonl` | Raw fingertip samples, timing and velocity, clutch/erase events, frame diagnostics, and audio state. |
-| `metadata.json` | Participant/demo/condition IDs, software/configuration versions, device and hand information, drawing settings, and audio-buffer latency estimates. |
-| `session.json` | Session status, finalization reason, counts, and output filenames. |
-| `preview.png` | Optional screenshot. It may be absent after stopping Play Mode or an unexpected exit; drawing geometry and session data are saved separately. |
-
-### Autosave and recovery
-
-Drawing geometry and session data are saved automatically in the background. These saves update the data files; they do not create periodic screenshots.
-
-Pause and normal shutdown wait for pending saves. Previously flushed data can remain available after an unexpected exit, but a crash, power loss, or storage failure can still lose pending data. There is no guaranteed maximum loss interval or automatic session-resume interface.
-
-## Sampling and performance
-
-Drawing checks the fingertip **every rendered frame**, after the hand SDK updates. A new visible point is added when movement exceeds the configured minimum distance. There is no fixed time-based drawing throttle or synthetic curve interpolation. Invalid tracking ends the current segment instead of connecting across a tracking gap.
-
-`telemetryRateHz` controls ordinary diagnostic logging, not drawing-point sampling.
-
-To investigate stalls, inspect `stroke_point.sampleIntervalSeconds`, `slow_frame.frameDeltaSeconds`, and `autosave_complete` in `events.jsonl`. The fields `snapshotCopyMs`, `saveWorkerMs`, and `saveInProgress` describe save preparation and background-save activity. Audio latency is a buffer-based estimate, not a measured end-to-end acoustic latency.
-
-## Troubleshooting
-
-- **Hands are missing:** confirm Quest Link and hand tracking are available to the Editor, keep both hands visible, and check the Console for XR errors. A desktop mouse cannot replace tracked hands.
-- **Drawing does not start:** open `DrawingScene`, wait for compilation, and hold the left index pinch while the right hand is tracked.
-- **Scene references appear incorrect:** run **Drawing > Validate Project** in Unity. It checks the scene, hand components, configuration, and required references.
-- **A screenshot is missing:** `preview.png` is optional and is not generated by stopping Play Mode directly. Check the drawing exports and session data for the saved result.
-- **The first import fails:** check the internet connection and Package Manager errors, and use the pinned Unity version before changing package versions.
-
-## Repository contents
-
-The repository includes `Assets`, `Packages`, `ProjectSettings`, this README, and Git configuration files. Keep asset `.meta` files and the package lock file: they preserve references and dependency resolution.
-
-Generated caches, builds, local settings, and `Assets/Data` are excluded by `.gitignore`. Manual browser uploads and hand-made archives do not apply `.gitignore` automatically, so exclude recordings yourself when using those methods.
-
-Current application version: **0.1.2**. Configuration version: **drawing-config-3**. Local project validation has passed with Unity 6000.3.5f1; first-time setup on a separate clean computer has not yet been verified.
+Recordings stay local and are excluded from Git.
